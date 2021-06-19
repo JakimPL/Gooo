@@ -6,6 +6,7 @@ from config import Config
 class UI:
     def __init__(self, board_size):
         config = Config()
+        self.line = 0
         self.x_offset = config.x_offset
         self.y_offset = config.y_offset
         self.size = config.tile_size
@@ -34,6 +35,7 @@ class UI:
         self.DISPLAYSURF = pygame.display.set_mode((self.game_width, self.game_height), 0, 32)
 
     def draw_game(self, state: State):
+        self.line = 0
         pygame.draw.rect(self.DISPLAYSURF, self.DK_GREY if state.end else self.TURN[state.player], (0, 0, self.game_width, self.game_height))
         for i in range(self.board_size):
             for j in range(self.board_size):
@@ -53,13 +55,10 @@ class UI:
                     y = self.y_offset + self.size * (position if player == 1 else i + 1)
                     self.DISPLAYSURF.blit(self.sprites[player], (x, y))
 
-        if state.points != 0:
-            text = "{2} player wins by {0} point{1}.".format(state.points, "s" if state.points > 1 else "", "Red" if state.points > 0 else "Blue")
-        else:
-            text = "Draw."
-
+    def draw_text(self, text):
         label = self.font.render(text, True, (255, 255, 255))
-        self.DISPLAYSURF.blit(label, (self.game_width - self.panel, self.y_offset))
+        self.DISPLAYSURF.blit(label, (self.game_width - self.panel, self.y_offset + 15 * self.line))
+        self.line += 1
 
     def get_mouse_positions(self, pos):
         return [(pos[i] - self.x_offset) // self.size for i in [0, 1]]

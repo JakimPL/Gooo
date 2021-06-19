@@ -3,6 +3,8 @@ import os
 
 
 class LQN(torch.nn.Module):
+    PATH = "./model_{0}x{0}"
+
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
         self.size = output_size
@@ -15,11 +17,22 @@ class LQN(torch.nn.Module):
         return x
 
     def save(self, filename='model.pth'):
-        model_path = "./model_{0}x{0}".format(self.size)
+        model_path = self.PATH.format(self.size)
         if not os.path.exists(model_path):
             os.makedirs(model_path)
         filename = os.path.join(model_path, filename)
         torch.save(self.state_dict(), filename)
+        print("Model saved to {0}".format(filename))
+
+    def load(self, filename='model.pth'):
+        model_path = self.PATH.format(self.size)
+        if os.path.exists(model_path):
+            filename = os.path.join(model_path, filename)
+            self.load_state_dict(torch.load(filename))
+            self.eval()
+            print("Model loaded from {0}".format(filename))
+        else:
+            print("Model folder {0} does not exist".format(filename))
 
 
 class QTRN:
