@@ -9,7 +9,7 @@ class State:
 
     def __str__(self):
         return "Size: {0}\nMoves: {1}\nPoints: {2}\n{3} player turn{4}\n{5}".format(
-            self.size, self.moves, self.points, "Blue" if self.player else "Red",
+            self.size, self.moves, self.points, "Red" if self.player else "Blue",
             "\nThe game has ended" if self.end else "", self.get_board())
 
     def __repr__(self):

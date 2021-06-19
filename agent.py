@@ -1,25 +1,17 @@
 import torch
 import random
 import numpy as np
-import json
 from collections import deque
 from state import State
 from model import LQN, QTRN
+from config import Config
 
-
-with open("config.json") as file:
-    _config = json.load(file)
-    _alpha = _config['alpha']
-    _max_len = _config['max_len']
-    _batch_size = _config['batch_size']
-    _power = 1 - _config['randomness']
-    _gamma = _config['gamma']
-    _layers = _config['layers']
+config = Config()
 
 
 class Agent:
-    def __init__(self, n, learning_rate=_alpha, gamma=_gamma, hidden_layers=_layers,
-                 max_len=_max_len, alpha=_alpha, batch_size=_batch_size, power=_power):
+    def __init__(self, n, learning_rate=config.alpha, gamma=config.gamma, hidden_layers=config.layers,
+                 max_len=config.max_len, alpha=config.alpha, batch_size=config.batch_size, power=config.power):
         self.power = power
         self.size = n
         self.batch_size = batch_size
