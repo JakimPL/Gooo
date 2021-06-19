@@ -1,0 +1,8 @@
+{
+	"alpha": 0.01,
+	"max_len": 1000000,
+	"batch_size": 1000,
+	"randomness": 0.5,
+	"gamma": 0.95,
+	"layers": 1024
+}
