@@ -1,5 +1,2 @@
-*.user
-*.stash
-*.o
-
-Makefile
+.idea/
+__pycache__/

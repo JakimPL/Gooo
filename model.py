@@ -5,6 +5,7 @@ import os
 class LQN(torch.nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
+        self.size = output_size
         self.ln1 = torch.nn.Linear(input_size, hidden_size)
         self.ln2 = torch.nn.Linear(hidden_size, output_size)
 
@@ -14,7 +15,7 @@ class LQN(torch.nn.Module):
         return x
 
     def save(self, filename='model.pth'):
-        model_path = "./model"
+        model_path = "./model_{0}x{0}".format(self.size)
         if not os.path.exists(model_path):
             os.makedirs(model_path)
         filename = os.path.join(model_path, filename)
