@@ -19,13 +19,15 @@ class Game:
         self.ui = UI(self.board_size + 1)
         self.clock = pygame.time.Clock()
 
-        self.game: pyspiel.Game = pyspiel.load_game('gooo')
+        self.game: pyspiel.Game = pyspiel.load_game('gooo', {'board_size': board_size})
         self.az_state: pyspiel.State = self.game.new_initial_state()
         self.bot = get_bot(self.game, self.board_size)
         self.suggested_action = self._get_suggested_action()
 
         self.element = None
         self.position = None
+
+        self.loop = None
 
     def _get_suggested_action(self):
         return self.bot.step(self.az_state)
@@ -48,7 +50,7 @@ class Game:
             if not self.az_state.is_terminal():
                 self.suggested_action = self.bot.step(self.az_state)
 
-    def frame(self):
+    def _frame(self):
         self.ui.draw_game(self.state)
         self.ui.draw_text("{turn} player turn.".format(turn="Red" if self.state.player else "Blue"))
         if self.state.points != 0:
@@ -68,8 +70,12 @@ class Game:
         if self.autoplay[self.state.player]:
             self._make_move(self.suggested_action)
         else:
-            if self.element is not None and 0 <= self.element < self.board_size and self.state.positions[self.state.player][self.element] == self.position:
+            if self.element is not None and 0 <= self.element < self.board_size and \
+                    self.state.positions[self.state.player][self.element] == self.position:
                 self._make_move(self.element)
 
-        self.clock.tick(self.FPS)
-        pygame.display.update()
+    def play(self):
+        while True:
+            self._frame()
+            self.clock.tick(self.FPS)
+            pygame.display.update()
