@@ -1,4 +1,5 @@
 import os
+import threading
 from typing import Union
 
 import numpy as np
@@ -10,38 +11,63 @@ from open_spiel.python.algorithms.alpha_zero import model as az_model
 
 class OpenSpiel:
     def __init__(self, board_size: int):
-        self.board_size = board_size
-        self.game: pyspiel.Game = pyspiel.load_game('gooo', {'board_size': board_size})
-        self.az_state: pyspiel.State = self.game.new_initial_state()
+        self._board_size = board_size
+        self._game: pyspiel.Game = pyspiel.load_game('gooo', {'board_size': board_size})
+        self._az_state: pyspiel.State = self._game.new_initial_state()
+        self._bot = self._get_bot()
 
-        self.bot = self._get_bot()
-        self.suggested_action = self._get_suggested_action()
+        self._lock = threading.Lock()
+        self.calculate_best_move()
 
     def _get_bot(self) -> Union[None, mcts.MCTSBot]:
         rng = np.random.RandomState()
-        model_path = 'model_{size}x{size}/checkpoint--1'.format(size=self.board_size)
+        model_directory = "model_{size}x{size}".format(size=self._board_size)
+        model_path = os.path.join(model_directory, "checkpoint--1")
 
-        if os.path.exists(model_path):
+        if os.path.isdir(model_directory):
             model = az_model.Model.from_checkpoint(model_path)
-            evaluator = az_evaluator.AlphaZeroEvaluator(self.game, model)
+            evaluator = az_evaluator.AlphaZeroEvaluator(self._game, model)
             return mcts.MCTSBot(
-                self.game,
-                2,
-                1000,
-                evaluator,
+                game=self._game,
+                uct_c=2,
+                max_simulations=1000,
+                evaluator=evaluator,
                 random_state=rng,
                 child_selection_fn=mcts.SearchNode.puct_value,
                 solve=True,
                 verbose=False
             )
+        else:
+            print("Model {size}x{size} does not exist".format(size=self._board_size))
 
         return None
 
     def _get_suggested_action(self):
-        return self.bot.step(self.az_state) if self.bot is not None else None
+        action = self._bot.step(self._az_state) if self.is_initialized() else None
+        self._suggested_action = action
+
+    def is_initialized(self) -> bool:
+        return self._bot is not None
 
     def move(self, element: int):
-        if self.bot is not None:
-            self.az_state.apply_action(element)
-            if not self.az_state.is_terminal():
-                self.suggested_action = self.bot.step(self.az_state)
+        if self.is_initialized():
+            self._az_state.apply_action(element)
+            if not self._az_state.is_terminal():
+                self.calculate_best_move()
+                # self._suggested_action = self._bot.step(self._az_state)
+
+    def calculate_best_move(self):
+        self._suggested_action = None
+        threading.Thread(
+            target=self._get_suggested_action,
+            args=(),
+            daemon=True
+        ).start()
+
+    @property
+    def board_size(self) -> int:
+        return self._board_size
+
+    @property
+    def suggested_action(self) -> int:
+        return self._suggested_action
