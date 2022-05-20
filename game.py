@@ -42,17 +42,24 @@ class Game:
                 self._make_move(self._open_spiel.suggested_action)
         else:
             if self._element is not None and 0 <= self._element < self._board_size and \
-                    self._state.positions[self._state.player][self._element] == self._position:
+                    self._state.get_position(self._state.player, self._element) == self._position:
                 self._make_move(self._element)
 
-    def _make_move(self, element: int):
-        if self._state.is_move_possible(element):
-            self._state.move(element)
-            self._open_spiel.move(element)
+    def _make_move(self, action: int):
+        if self._state.is_move_possible(action):
+            self._state.move(action)
+            self._open_spiel.move(action)
+        else:
+            print("Tried to move: {move}".format(move=action), self._state, sep='\n')
+            raise ValueError("move {move} is not possible")
+
+        if self._open_spiel.get_board() != self._state.get_board():
+            print(self._state.get_board(), "\nvs\n", self._open_spiel.get_board())
+            raise ValueError("state mismatch")
 
     def _draw(self):
         self._ui.draw_game(self._state)
-        self._ui.draw_text("{turn} player turn.".format(turn="Red" if self._state.player else "Blue"))
+        self._ui.draw_text("{turn} player turn.".format(turn="Red" if self._state._player else "Blue"))
         if self._state.points != 0:
             text = "{player} player wins by {points} point{plural}.".format(
                 points=abs(self._state.points),

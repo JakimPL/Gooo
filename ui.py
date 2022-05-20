@@ -49,7 +49,7 @@ class UI:
 
         for i in range(self.board_size - 1):
             for player in [0, 1]:
-                position = state.positions[player][i]
+                position = state.get_position(player, i)
                 if position < self.board_size:
                     x = self.x_offset + self.size * (position if player == 0 else i + 1)
                     y = self.y_offset + self.size * (position if player == 1 else i + 1)

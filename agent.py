@@ -11,12 +11,14 @@ from open_spiel.python.algorithms.alpha_zero import model as az_model
 
 class OpenSpiel:
     def __init__(self, board_size: int):
-        self._board_size = board_size
+        self._board_size: int = board_size
         self._game: pyspiel.Game = pyspiel.load_game('gooo', {'board_size': board_size})
         self._az_state: pyspiel.State = self._game.new_initial_state()
         self._bot = self._get_bot()
 
         self._lock = threading.Lock()
+
+        self._suggested_action = None
         self.calculate_best_move()
 
     def _get_bot(self) -> Union[None, mcts.MCTSBot]:
@@ -49,12 +51,14 @@ class OpenSpiel:
     def is_initialized(self) -> bool:
         return self._bot is not None
 
+    def get_board(self) -> str:
+        return str(self._az_state)
+
     def move(self, element: int):
         if self.is_initialized():
             self._az_state.apply_action(element)
             if not self._az_state.is_terminal():
                 self.calculate_best_move()
-                # self._suggested_action = self._bot.step(self._az_state)
 
     def calculate_best_move(self):
         self._suggested_action = None
