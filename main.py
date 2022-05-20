@@ -18,5 +18,5 @@ autoplay = args.autoplay
 
 if __name__ == '__main__':
     assert 1 < size <= 10, "invalid size: {size}; the size should be in the interval [2, 10]".format(size=size)
-    game = Game(size, autoplay=(True, False))
+    game = Game(size, autoplay=(True, True))
     game.play()

@@ -13,7 +13,6 @@ FPS = 60
 class Game:
     def __init__(self, board_size: int = 5, autoplay: tuple[bool, bool] = (False, False)):
         pygame.init()
-        self.autoplay = autoplay
         self.board_size = board_size
         self.state = State(self.board_size)
         self.ui = UI(self.board_size + 1)
@@ -24,6 +23,7 @@ class Game:
         self.position = None
 
         self.open_spiel = OpenSpiel(self.board_size)
+        self.autoplay = autoplay if self.open_spiel.bot is not None else (False, False)
 
     def _get_events(self):
         if not self.state.end and pygame.mouse.get_pressed(3)[0]:
