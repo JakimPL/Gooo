@@ -8,11 +8,10 @@ class State:
         self._end: bool = False
 
     def __str__(self):
-        return "Size: {size}\nMoves: {moves}\nPoints: {points}\n{player} player turn{end}\n{board}".format(
+        return "Size: {size}\nMoves: {moves}\nPoints: {points}\n{board}".format(
             size=self._size,
             moves=self._moves,
             points=self._points,
-            player="Red" if self._player else "Blue",
             end="\nThe game has ended" if self._end else "",
             board=self.get_board()
         )
@@ -24,7 +23,8 @@ class State:
         self.__init__(self._size)
 
     def get_board(self) -> str:
-        string = ""
+        string = "Red" if self._player else "Blue"
+        string += " player turn\n"
         for i in range(self._size + 1):
             line = ""
             for j in range(self._size + 1):
