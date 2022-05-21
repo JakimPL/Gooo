@@ -57,16 +57,16 @@ class OpenSpiel:
     def move(self, element: int):
         if self.is_initialized():
             self._az_state.apply_action(element)
-            if not self._az_state.is_terminal():
-                self.calculate_best_move()
+            self.calculate_best_move()
 
     def calculate_best_move(self):
         self._suggested_action = None
-        threading.Thread(
-            target=self._get_suggested_action,
-            args=(),
-            daemon=True
-        ).start()
+        if not self._az_state.is_terminal():
+            threading.Thread(
+                target=self._get_suggested_action,
+                args=(),
+                daemon=True
+            ).start()
 
     @property
     def board_size(self) -> int:

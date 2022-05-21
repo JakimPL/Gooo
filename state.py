@@ -55,7 +55,7 @@ class State:
 
     def is_end(self) -> bool:
         for position in self._positions[self._player]:
-            if position < self._size:
+            if position <= self._size:
                 return False
 
         return True
@@ -71,7 +71,7 @@ class State:
             if not self._end:
                 self._player = 1 - self._player
                 if not self.get_possible_moves():
-                    self._points += 1 - 2 * self._player
+                    self._points += 2 * self._player - 1
                     self._player = 1 - self._player
 
             return True
