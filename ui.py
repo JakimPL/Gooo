@@ -1,11 +1,11 @@
 import pygame
 from state import State
-from config import Config
+from config import get_config
 
 
 class UI:
     def __init__(self, board_size):
-        config = Config()
+        config = get_config()
         self.line = 0
         self.x_offset = config.x_offset
         self.y_offset = config.y_offset

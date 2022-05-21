@@ -11,19 +11,22 @@ FPS = 60
 
 
 class Game:
-    def __init__(self, board_size: int = 5, autoplay: tuple[bool, bool] = (False, False)):
-        pygame.init()
-        self._board_size = board_size
-        self._state = State(self._board_size)
-        self._ui = UI(self._board_size + 1)
+    def __init__(self, board_size: int = 5, autoplay: tuple[bool, bool] = (False, False), suggestions: bool = True):
+        self._board_size: int = board_size
+        self._state: State = State(self._board_size)
 
-        self._clock = pygame.time.Clock()
+        self._ui: UI = UI(self._board_size + 1)
+
+        self._clock: pygame.time.Clock = pygame.time.Clock()
 
         self._element = None
         self._position = None
 
-        self._open_spiel = OpenSpiel(self._board_size)
-        self._autoplay = autoplay if self._open_spiel.is_initialized() else (False, False)
+        self._open_spiel: OpenSpiel = OpenSpiel(self._board_size)
+        self._autoplay: tuple[bool, bool] = autoplay if self._open_spiel.is_initialized() else (False, False)
+        self._suggestions: bool = suggestions
+
+        self._history: list[str] = []
 
     def _reset_elements(self):
         self._element = None
@@ -42,8 +45,9 @@ class Game:
 
             elif event.type == pygame.KEYDOWN and event.unicode.isdigit():
                 number = int(event.unicode) - 1
-                self._element = number
-                self._position = self._state.get_position(self._state.player, number)
+                if 0 <= number < self._board_size:
+                    self._element = number
+                    self._position = self._state.get_position(self._state.player, number)
 
     def _control_moves(self):
         if self._autoplay[self._state.player]:
@@ -59,15 +63,23 @@ class Game:
 
     def _make_move(self, action: int):
         if self._state.is_move_possible(action):
+            player = self._state.player
             self._reset_elements()
             self._state.move(action)
             self._open_spiel.move(action)
+
+            self._history.append("{player}: {action}".format(
+                player="o" if player else "x",
+                action=action + 1
+            ))
+
+            print(self._history)
         else:
-            print("Tried to move: {move}".format(move=action), self._state, sep='\n')
+            print("Tried to move: {move}".format(move=action), self._state, sep="\n")
             raise ValueError("move {move} is not possible".format(move=action))
 
         if self._open_spiel.get_board() != self._state.get_board():
-            print(self._state.get_board(), "vs", self._open_spiel.get_board(), sep='\n')
+            print(self._state.get_board(), "vs", self._open_spiel.get_board(), sep="\n")
             raise ValueError("state mismatch")
 
     def _draw(self):
@@ -83,7 +95,7 @@ class Game:
             text = "Draw."
 
         self._ui.draw_text(text)
-        if self._open_spiel.suggested_action is not None:
+        if self._suggestions and self._open_spiel.suggested_action is not None:
             self._ui.draw_text("Suggested action: {action}.".format(action=self._open_spiel.suggested_action + 1))
 
     def _frame(self):

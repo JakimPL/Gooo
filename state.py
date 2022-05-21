@@ -28,15 +28,15 @@ class State:
         for i in range(self._size + 1):
             line = ""
             for j in range(self._size + 1):
-                sign = ' '
+                sign = " "
                 if i > 0 and j > 0:
-                    sign = '.'
+                    sign = "."
                 if j > 0 and self._positions[1][j - 1] == i:
-                    sign = 'x'
+                    sign = "x"
                 if i > 0 and self._positions[0][i - 1] == j:
-                    sign = 'o'
+                    sign = "o"
                 line += sign
-            line += '\n'
+            line += "\n"
             string += line
 
         string += "Points: {points}".format(points=self._points)
