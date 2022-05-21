@@ -76,7 +76,7 @@ class Game:
             print("Tried to move: {move}".format(move=action), self._state, sep="\n")
             raise ValueError("move {move} is not possible".format(move=action))
 
-        if self._open_spiel.get_board() != self._state.get_board():
+        if self._open_spiel.is_initialized() and self._open_spiel.get_board() != self._state.get_board():
             print(self._state.get_board(), "vs", self._open_spiel.get_board(), sep="\n")
             raise ValueError("state mismatch")
 
