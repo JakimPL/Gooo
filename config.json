@@ -1,5 +1,5 @@
 {
-	"game": {
+	"ui": {
 		"x_offset": 16,
 		"y_offset": 16,
 		"tile_size": 64,

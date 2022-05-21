@@ -36,7 +36,7 @@ class UI:
 
     def draw_game(self, state: State):
         self.line = 0
-        pygame.draw.rect(self.DISPLAYSURF, self.DK_GREY if state.end else self.TURN[state.player], (0, 0, self.game_width, self.game_height))
+        pygame.draw.rect(self.DISPLAYSURF, self.DK_GREY if state.is_end() else self.TURN[state.player], (0, 0, self.game_width, self.game_height))
         for i in range(self.board_size):
             for j in range(self.board_size):
                 pygame.draw.rect(self.DISPLAYSURF, self.RIM_COLOR[i][j], (self.x_offset + i * self.size + 1, self.y_offset + j * self.size + 1, self.size - 2, self.size - 2))
@@ -44,7 +44,7 @@ class UI:
                     color = self.LT_GREY
                 else:
                     color = self.COLOR[i][j]
-                if not state.end:
+                if not state.is_end():
                     pygame.draw.rect(self.DISPLAYSURF, color, (self.x_offset + i * self.size + self.rim, self.y_offset + j * self.size + self.rim, self.size - 2 * self.rim, self.size - 2 * self.rim))
 
         for i in range(self.board_size - 1):

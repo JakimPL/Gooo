@@ -1,11 +1,12 @@
 class State:
-    def __init__(self, size: int):
+    def __init__(self, size: int, end_policy: str = "hard"):
         self._size: int = size
         self._moves: int = 0
         self._points: int = 0
         self._player: int = 0
         self._positions: list[list[int]] = [[0] * size, [0] * size]
         self._end: bool = False
+        self._end_policy: str = end_policy
 
     def __str__(self):
         return "Size: {size}\nMoves: {moves}\nPoints: {points}\n{board}".format(
@@ -54,9 +55,22 @@ class State:
         return [] if self._end else [i for i in range(self._size) if self.is_move_possible(i)]
 
     def is_end(self) -> bool:
+        return self.is_soft_end() if self._end_policy == "soft" else self.is_hard_end()
+
+    def is_hard_end(self) -> bool:
         for position in self._positions[self._player]:
             if position <= self._size:
                 return False
+
+        return True
+
+    def is_soft_end(self) -> bool:
+        for player in [0, 1]:
+            for i in range(self._size):
+                position = self._positions[player][i]
+                for j in range(position, self._size):
+                    if self._positions[1 - player][j] <= i + 1:
+                        return False
 
         return True
 
@@ -66,7 +80,7 @@ class State:
 
             self._positions[self._player][i] += 1
             if self._positions[self._player][i] > self._size:
-                self._end = self.is_end()
+                self._end = self.is_hard_end()
 
             if not self._end:
                 self._player = 1 - self._player

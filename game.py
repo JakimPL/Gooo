@@ -11,9 +11,16 @@ FPS = 60
 
 
 class Game:
-    def __init__(self, board_size: int = 5, autoplay: tuple[bool, bool] = (False, False), suggestions: bool = True):
+    def __init__(
+            self,
+            board_size: int = 5,
+            autoplay: tuple[bool, bool] = (False, False),
+            suggestions: bool = True,
+            end_policy: str = "hard"
+    ):
         self._board_size: int = board_size
-        self._state: State = State(self._board_size)
+        self._end_policy = end_policy
+        self._state: State = State(self._board_size, self._end_policy)
 
         self._ui: UI = UI(self._board_size + 1)
 
@@ -33,7 +40,7 @@ class Game:
         self._position = None
 
     def _get_events(self):
-        if not self._state.end and pygame.mouse.get_pressed(3)[0]:
+        if not self._state.is_end() and pygame.mouse.get_pressed(3)[0]:
             x, y = self._ui.get_mouse_positions(pygame.mouse.get_pos())
             self._element = (x if self._state.player else y) - 1
             self._position = y if self._state.player else x
@@ -43,16 +50,19 @@ class Game:
                 pygame.quit()
                 sys.exit()
 
-            elif event.type == pygame.KEYDOWN and event.unicode.isdigit():
-                number = int(event.unicode) - 1
-                if 0 <= number < self._board_size:
-                    self._element = number
-                    self._position = self._state.get_position(self._state.player, number)
+            if not self._state.is_end():
+                if event.type == pygame.KEYDOWN and event.unicode.isdigit():
+                    number = int(event.unicode) - 1
+                    if 0 <= number < self._board_size:
+                        self._element = number
+                        self._position = self._state.get_position(self._state.player, number)
 
-    def _control_moves(self):
+    def _control_moves(self) -> int:
         if self._autoplay[self._state.player]:
-            if self._open_spiel.suggested_action is not None:
-                self._make_move(self._open_spiel.suggested_action)
+            if not self._state.is_end() and self._open_spiel.suggested_action is not None:
+                move = self._open_spiel.suggested_action
+                self._make_move(move)
+                return move
         else:
             element = self._element
             position = self._position
@@ -60,6 +70,9 @@ class Game:
                     self._state.get_position(self._state.player, element) == position and \
                     self._state.is_move_possible(element):
                 self._make_move(element)
+                return element
+
+        return -1
 
     def _make_move(self, action: int):
         if self._state.is_move_possible(action):
