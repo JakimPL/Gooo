@@ -3,7 +3,7 @@ import sys
 import pygame
 from pygame import locals
 
-from agent import OpenSpiel
+from agent import Agent
 from state import State
 from ui import UI
 
@@ -22,7 +22,7 @@ class Game:
         self._element = None
         self._position = None
 
-        self._open_spiel: OpenSpiel = OpenSpiel(self._board_size)
+        self._open_spiel: Agent = Agent(self._board_size)
         self._autoplay: tuple[bool, bool] = autoplay if self._open_spiel.is_initialized() else (False, False)
         self._suggestions: bool = suggestions
 
@@ -72,8 +72,6 @@ class Game:
                 player="o" if player else "x",
                 action=action + 1
             ))
-
-            print(self._history)
         else:
             print("Tried to move: {move}".format(move=action), self._state, sep="\n")
             raise ValueError("move {move} is not possible".format(move=action))

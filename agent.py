@@ -1,6 +1,6 @@
 import os
-import threading
 import time
+from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Union
 
 import numpy as np
@@ -12,7 +12,7 @@ from open_spiel.python.algorithms.alpha_zero import model as az_model
 from config import get_config
 
 
-class OpenSpiel:
+class Agent:
     def __init__(self, board_size: int):
         config = get_config()
         self._threading = config.threading
@@ -20,10 +20,10 @@ class OpenSpiel:
 
         self._board_size: int = board_size
         self._game: pyspiel.Game = pyspiel.load_game("gooo", {"board_size": board_size})
-        self._az_state: pyspiel.State = self._game.new_initial_state()
+        self._state: pyspiel.State = self._game.new_initial_state()
         self._bot = self._get_bot()
 
-        self._lock = threading.Lock()
+        self._executor = ThreadPoolExecutor(max_workers=1)
 
         self._suggested_action = None
         self.calculate_best_move()
@@ -49,35 +49,38 @@ class OpenSpiel:
         else:
             print("Model {size}x{size} does not exist".format(size=self._board_size))
 
-        return None
+    def _calculate_suggested_action(self, state: pyspiel.State) -> Union[None, int]:
+        if self.is_initialized():
+            time.sleep(self._sleep_time)
+            action = self._bot.step(state)
+            if self._state.is_terminal() or state.observation_string() != self._state.observation_string():
+                return None
 
-    def _get_suggested_action(self):
-        action = self._bot.step(self._az_state) if self.is_initialized() else None
-        time.sleep(self._sleep_time)
-        self._suggested_action = action
+            return action
+
+    def _set_suggested_action(self, future: Future):
+        self._suggested_action = future.result()
 
     def is_initialized(self) -> bool:
         return self._bot is not None
 
     def get_board(self) -> str:
-        return str(self._az_state)
+        return str(self._state)
 
     def move(self, element: int):
         if self.is_initialized():
-            self._az_state.apply_action(element)
+            self._state.apply_action(element)
             self.calculate_best_move()
 
     def calculate_best_move(self):
         self._suggested_action = None
-        if not self._az_state.is_terminal():
+        if not self._state.is_terminal():
             if self._threading:
-                threading.Thread(
-                    target=self._get_suggested_action,
-                    args=(),
-                    daemon=True
-                ).start()
+                state = self._state.clone()
+                future = self._executor.submit(self._calculate_suggested_action, state)
+                future.add_done_callback(self._set_suggested_action)
             else:
-                self._get_suggested_action()
+                self._suggested_action = self._calculate_suggested_action(self._state)
 
     @property
     def board_size(self) -> int:

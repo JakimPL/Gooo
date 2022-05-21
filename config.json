@@ -9,6 +9,6 @@
 	},
 	"bot": {
 		"threading": true,
-		"sleep_time": 0.4
+		"sleep_time": 0.2
 	}
 }
