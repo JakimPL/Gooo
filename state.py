@@ -1,70 +1,98 @@
 class State:
-    def __init__(self, n):
-        self.size = n
-        self.moves = 0
-        self.points = 0
-        self.player = 0
-        self.positions = [[0] * n, [0] * n]
-        self.end = False
+    def __init__(self, size: int):
+        self._size: int = size
+        self._moves: int = 0
+        self._points: int = 0
+        self._player: int = 0
+        self._positions: list[list[int]] = [[0] * size, [0] * size]
+        self._end: bool = False
 
     def __str__(self):
-        return "Size: {0}\nMoves: {1}\nPoints: {2}\n{3} player turn{4}\n{5}".format(
-            self.size, self.moves, self.points, "Red" if self.player else "Blue",
-            "\nThe game has ended" if self.end else "", self.get_board())
+        return "Size: {size}\nMoves: {moves}\nPoints: {points}\n{board}".format(
+            size=self._size,
+            moves=self._moves,
+            points=self._points,
+            end="\nThe game has ended" if self._end else "",
+            board=self.get_board()
+        )
 
     def __repr__(self):
         return self.__str__()
 
     def reset(self):
-        self.__init__(self.size)
+        self.__init__(self._size)
 
-    def get_board(self):
-        string = ""
-        for i in range(self.size + 1):
+    def get_board(self) -> str:
+        string = "Red" if self._player else "Blue"
+        string += " player turn\n"
+        for i in range(self._size + 1):
             line = ""
-            for j in range(self.size + 1):
-                sign = ' '
+            for j in range(self._size + 1):
+                sign = " "
                 if i > 0 and j > 0:
-                    sign = '.'
-                if j > 0 and self.positions[1][j - 1] == i:
-                    sign = 'x'
-                if i > 0 and self.positions[0][i - 1] == j:
-                    sign = 'o'
+                    sign = "."
+                if j > 0 and self._positions[1][j - 1] == i:
+                    sign = "x"
+                if i > 0 and self._positions[0][i - 1] == j:
+                    sign = "o"
                 line += sign
-            line += '\n'
+            line += "\n"
             string += line
+
+        string += "Points: {points}".format(points=self._points)
         return string
 
-    def is_move_possible(self, i):
-        if i < 0 or i >= self.size:
+    def is_move_possible(self, i) -> bool:
+        if i < 0 or i >= self._size:
             return False
-        position = self.positions[self.player][i]
-        return self.positions[self.player][i] == self.size or \
-            (self.positions[self.player][i] < self.size and self.positions[1 - self.player][position] != i + 1)
 
-    def get_possible_moves(self):
-        return [] if self.end else [i for i in range(self.size) if self.is_move_possible(i)]
+        position = self._positions[self._player][i]
+        return self._positions[self._player][i] == self._size or \
+               (self._positions[self._player][i] < self._size and self._positions[1 - self._player][position] != i + 1)
 
-    def is_end(self):
-        for position in self.positions[self.player]:
-            if position < self.size:
+    def get_possible_moves(self) -> list[int]:
+        return [] if self._end else [i for i in range(self._size) if self.is_move_possible(i)]
+
+    def is_end(self) -> bool:
+        for position in self._positions[self._player]:
+            if position <= self._size:
                 return False
 
         return True
 
-    def move(self, i):
-        if not self.end and self.is_move_possible(i):
-            self.moves += 1
+    def move(self, i) -> bool:
+        if not self._end and self.is_move_possible(i):
+            self._moves += 1
 
-            self.positions[self.player][i] += 1
-            if self.positions[self.player][i] > self.size:
-                self.end = self.is_end()
+            self._positions[self._player][i] += 1
+            if self._positions[self._player][i] > self._size:
+                self._end = self.is_end()
 
-            if not self.end:
-                self.player = 1 - self.player
+            if not self._end:
+                self._player = 1 - self._player
                 if not self.get_possible_moves():
-                    self.points += 1 - 2 * self.player
-                    self.player = 1 - self.player
+                    self._points += 2 * self._player - 1
+                    self._player = 1 - self._player
+
             return True
 
         return False
+
+    def get_position(self, player: int, action: int) -> int:
+        return self._positions[player][action]
+
+    @property
+    def points(self) -> int:
+        return self._points
+
+    @property
+    def moves(self) -> int:
+        return self._moves
+
+    @property
+    def end(self) -> bool:
+        return self._end
+
+    @property
+    def player(self) -> int:
+        return self._player

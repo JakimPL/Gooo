@@ -1,66 +1,91 @@
-import torch
-import random
-import numpy as np
-from collections import deque
-from state import State
-from model import LQN, QTRN
-from config import Config
+import os
+import time
+from concurrent.futures import Future, ThreadPoolExecutor
+from typing import Union
 
-config = Config()
+import numpy as np
+import pyspiel
+from open_spiel.python.algorithms import mcts
+from open_spiel.python.algorithms.alpha_zero import evaluator as az_evaluator
+from open_spiel.python.algorithms.alpha_zero import model as az_model
+
+from config import get_config
 
 
 class Agent:
-    def __init__(self, n, learning_rate=config.alpha, gamma=config.gamma, hidden_layers=config.layers,
-                 max_len=config.max_len, alpha=config.alpha, batch_size=config.batch_size, power=config.power):
-        self.power = power
-        self.size = n
-        self.batch_size = batch_size
-        self.learning_rate = learning_rate
-        self.games = 0
-        self.eps = 0
-        self.gamma = gamma
-        self.memory = deque(maxlen=max_len)
-        self.model = LQN(2 * self.size + 1, hidden_layers, self.size)
-        self.trainer = QTRN(self.model, alpha, gamma=self.gamma)
+    def __init__(self, board_size: int):
+        config = get_config()
+        self._threading = config.threading
+        self._sleep_time = config.sleep_time
 
-    @staticmethod
-    def get_state(state: State):
-        return np.array([state.player] + state.positions[0] + state.positions[1], dtype=int)
+        self._board_size: int = board_size
+        self._game: pyspiel.Game = pyspiel.load_game("gooo", {"board_size": board_size})
+        self._state: pyspiel.State = self._game.new_initial_state()
+        self._bot = self._get_bot()
 
-    def remember(self, state, move, reward, next_state, end):
-        self.memory.append((state, move, reward, next_state, end))
+        self._executor = ThreadPoolExecutor(max_workers=1)
 
-    def train_short(self, current_state, move, reward, next_state, end):
-        self.trainer.train_step(current_state, move, reward, next_state, end)
+        self._suggested_action = None
+        self.calculate_best_move()
 
-    def train_long(self):
-        sample = random.sample(self.memory, self.batch_size) if len(self.memory) > self.batch_size else self.memory
+    def _get_bot(self) -> Union[None, mcts.MCTSBot]:
+        rng = np.random.RandomState()
+        model_directory = "model_{size}x{size}".format(size=self._board_size)
+        model_path = os.path.join(model_directory, "{size}x{size}".format(size=self._board_size))
 
-        current_state, move, reward, next_state, end = zip(*sample)
-        self.trainer.train_step(current_state, move, reward, next_state, end)
-
-    def get_prediction_vector(self, state: np.array):
-        return self.model(torch.tensor(state, dtype=torch.float))
-
-    def get_prediction(self, state: np.array):
-        return torch.argmax(self.get_prediction_vector(state)).item()
-
-    def get_action(self, state: np.array):
-        game_state = self.state_from_array(state)
-        self.eps = 1 / ((self.games + 1) ** self.power)
-        move = [0] * self.size
-        if random.random() < self.eps:
-            index = random.choice(game_state.get_possible_moves())
+        if os.path.isdir(model_directory):
+            model = az_model.Model.from_checkpoint(model_path)
+            evaluator = az_evaluator.AlphaZeroEvaluator(self._game, model)
+            return mcts.MCTSBot(
+                game=self._game,
+                uct_c=2,
+                max_simulations=1000,
+                evaluator=evaluator,
+                random_state=rng,
+                child_selection_fn=mcts.SearchNode.puct_value,
+                solve=True,
+                verbose=False
+            )
         else:
-            index = self.get_prediction(state)
+            print("Model {size}x{size} does not exist".format(size=self._board_size))
 
-        move[index] = 1
-        return move
+    def _calculate_suggested_action(self, state: pyspiel.State) -> Union[None, int]:
+        if self.is_initialized():
+            time.sleep(self._sleep_time)
+            action = self._bot.step(state)
+            if self._state.is_terminal() or state.observation_string() != self._state.observation_string():
+                return None
 
-    @staticmethod
-    def state_from_array(array: np.array) -> State:
-        size = (len(array) - 1) // 2
-        state = State(size)
-        state.player = array[0]
-        state.positions = [array[1:size + 1], array[size + 1:]]
-        return state
+            return action
+
+    def _set_suggested_action(self, future: Future):
+        self._suggested_action = future.result()
+
+    def is_initialized(self) -> bool:
+        return self._bot is not None
+
+    def get_board(self) -> str:
+        return str(self._state)
+
+    def move(self, element: int):
+        if self.is_initialized():
+            self._state.apply_action(element)
+            self.calculate_best_move()
+
+    def calculate_best_move(self):
+        self._suggested_action = None
+        if not self._state.is_terminal():
+            if self._threading:
+                state = self._state.clone()
+                future = self._executor.submit(self._calculate_suggested_action, state)
+                future.add_done_callback(self._set_suggested_action)
+            else:
+                self._suggested_action = self._calculate_suggested_action(self._state)
+
+    @property
+    def board_size(self) -> int:
+        return self._board_size
+
+    @property
+    def suggested_action(self) -> int:
+        return self._suggested_action

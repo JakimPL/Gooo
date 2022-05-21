@@ -1,11 +1,11 @@
 import pygame
 from state import State
-from config import Config
+from config import get_config
 
 
 class UI:
     def __init__(self, board_size):
-        config = Config()
+        config = get_config()
         self.line = 0
         self.x_offset = config.x_offset
         self.y_offset = config.y_offset
@@ -49,7 +49,7 @@ class UI:
 
         for i in range(self.board_size - 1):
             for player in [0, 1]:
-                position = state.positions[player][i]
+                position = state.get_position(player, i)
                 if position < self.board_size:
                     x = self.x_offset + self.size * (position if player == 0 else i + 1)
                     y = self.y_offset + self.size * (position if player == 1 else i + 1)
