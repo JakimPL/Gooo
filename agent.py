@@ -1,5 +1,6 @@
 import os
 import threading
+import time
 from typing import Union
 
 import numpy as np
@@ -46,6 +47,7 @@ class OpenSpiel:
 
     def _get_suggested_action(self):
         action = self._bot.step(self._az_state) if self.is_initialized() else None
+        time.sleep(0.5)
         self._suggested_action = action
 
     def is_initialized(self) -> bool:

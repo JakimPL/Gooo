@@ -40,6 +40,11 @@ class Game:
                 pygame.quit()
                 sys.exit()
 
+            elif event.type == pygame.KEYDOWN and event.unicode.isdigit():
+                number = int(event.unicode) - 1
+                self._element = number
+                self._position = self._state.get_position(self._state.player, number)
+
     def _control_moves(self):
         if self._autoplay[self._state.player]:
             if self._open_spiel.suggested_action is not None:
@@ -50,7 +55,6 @@ class Game:
             if element is not None and 0 <= element < self._board_size and \
                     self._state.get_position(self._state.player, element) == position and \
                     self._state.is_move_possible(element):
-
                 self._make_move(element)
 
     def _make_move(self, action: int):
